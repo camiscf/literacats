@@ -1,0 +1,14 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# Lambda artifacts
+aws-lambda-tools-defaults.json
+appsettings.Development.json
+
+# Logs
+*.log
