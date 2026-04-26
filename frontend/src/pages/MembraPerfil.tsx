@@ -6,14 +6,9 @@ import { buscarMembra, buscarLivrosDaMembra, type Membra, type MembraLivro } fro
 // Avatares por ID
 const avatares: Record<string, string> = {
   '1': '🐱',
-  '2': '🦊',
-  '3': '🦉',
-  '4': '🐰',
-  '5': '🐼',
-  '6': '🦇',
 }
 
-// Dados mock expandidos por membra (depois vem do backend)
+// Dados expandidos por membra (depois vem todo do backend)
 const dadosCompletos: Record<string, {
   totalPaginas: number
   totalResenhas: number
@@ -23,111 +18,16 @@ const dadosCompletos: Record<string, {
   conquistas: { icone: string; titulo: string }[]
 }> = {
   '1': {
-    totalPaginas: 9840,
-    totalResenhas: 18,
-    mediaAvaliacoes: 4.3,
-    livrosFavoritos: [
-      { titulo: 'Torto Arado', autor: 'Itamar Vieira Junior' },
-      { titulo: 'A Vegetariana', autor: 'Han Kang' },
-      { titulo: 'Hibisco Roxo', autor: 'Chimamanda Ngozi Adichie' },
-    ],
+    totalPaginas: 224,
+    totalResenhas: 0,
+    mediaAvaliacoes: 0,
+    livrosFavoritos: [],
     historicoRecente: [
-      { titulo: 'O Conto da Aia', autor: 'Margaret Atwood', data: 'Mai 2024', nota: 4 },
-      { titulo: 'Hibisco Roxo', autor: 'Chimamanda Ngozi Adichie', data: 'Abr 2024', nota: 5 },
+      { titulo: 'Nem Todo Outono É Igual', autor: 'Carla Madeira', data: 'Fev 2026', nota: 0 },
     ],
     conquistas: [
       { icone: '📖', titulo: 'Primeira Leitura' },
-      { icone: '✍️', titulo: 'Crítica Literária' },
-      { icone: '🐱', titulo: 'Gata Veterana' },
-    ],
-  },
-  '2': {
-    totalPaginas: 14200,
-    totalResenhas: 32,
-    mediaAvaliacoes: 4.7,
-    livrosFavoritos: [
-      { titulo: 'Orgulho e Preconceito', autor: 'Jane Austen' },
-      { titulo: 'O Nome do Vento', autor: 'Patrick Rothfuss' },
-      { titulo: 'Circe', autor: 'Madeline Miller' },
-    ],
-    historicoRecente: [
-      { titulo: 'Circe', autor: 'Madeline Miller', data: 'Mai 2024', nota: 5 },
-      { titulo: 'A Canção de Aquiles', autor: 'Madeline Miller', data: 'Abr 2024', nota: 5 },
-    ],
-    conquistas: [
-      { icone: '📖', titulo: 'Primeira Leitura' },
-      { icone: '✍️', titulo: 'Crítica Literária' },
-      { icone: '🔥', titulo: 'Em Chamas' },
-      { icone: '🏆', titulo: 'Top Leitora' },
-      { icone: '🐱', titulo: 'Gata Veterana' },
-    ],
-  },
-  '3': {
-    totalPaginas: 8400,
-    totalResenhas: 15,
-    mediaAvaliacoes: 4.1,
-    livrosFavoritos: [
-      { titulo: 'Sapiens', autor: 'Yuval Noah Harari' },
-      { titulo: 'Quarto de Despejo', autor: 'Carolina Maria de Jesus' },
-    ],
-    historicoRecente: [
-      { titulo: 'Quarto de Despejo', autor: 'Carolina Maria de Jesus', data: 'Mar 2024', nota: 5 },
-    ],
-    conquistas: [
-      { icone: '📖', titulo: 'Primeira Leitura' },
-      { icone: '🧠', titulo: 'Intelectual' },
-    ],
-  },
-  '4': {
-    totalPaginas: 5200,
-    totalResenhas: 12,
-    mediaAvaliacoes: 4.5,
-    livrosFavoritos: [
-      { titulo: 'Amora', autor: 'Natalia Borges Polesso' },
-      { titulo: 'Felicidade Clandestina', autor: 'Clarice Lispector' },
-    ],
-    historicoRecente: [
-      { titulo: 'Amora', autor: 'Natalia Borges Polesso', data: 'Mai 2024', nota: 5 },
-    ],
-    conquistas: [
-      { icone: '📖', titulo: 'Primeira Leitura' },
-      { icone: '📝', titulo: 'Poeta' },
-    ],
-  },
-  '5': {
-    totalPaginas: 11500,
-    totalResenhas: 22,
-    mediaAvaliacoes: 4.4,
-    livrosFavoritos: [
-      { titulo: 'O Conto da Aia', autor: 'Margaret Atwood' },
-      { titulo: '1984', autor: 'George Orwell' },
-      { titulo: 'Fahrenheit 451', autor: 'Ray Bradbury' },
-    ],
-    historicoRecente: [
-      { titulo: 'O Conto da Aia', autor: 'Margaret Atwood', data: 'Mai 2024', nota: 5 },
-      { titulo: 'Admirável Mundo Novo', autor: 'Aldous Huxley', data: 'Abr 2024', nota: 4 },
-    ],
-    conquistas: [
-      { icone: '📖', titulo: 'Primeira Leitura' },
-      { icone: '✍️', titulo: 'Crítica Literária' },
-      { icone: '🛸', titulo: 'Viajante do Tempo' },
-      { icone: '🐱', titulo: 'Gata Veterana' },
-    ],
-  },
-  '6': {
-    totalPaginas: 7200,
-    totalResenhas: 14,
-    mediaAvaliacoes: 4.2,
-    livrosFavoritos: [
-      { titulo: 'O Iluminado', autor: 'Stephen King' },
-      { titulo: 'O Silêncio dos Inocentes', autor: 'Thomas Harris' },
-    ],
-    historicoRecente: [
-      { titulo: 'O Iluminado', autor: 'Stephen King', data: 'Abr 2024', nota: 5 },
-    ],
-    conquistas: [
-      { icone: '📖', titulo: 'Primeira Leitura' },
-      { icone: '👻', titulo: 'Corajosa' },
+      { icone: '🐱', titulo: 'Gata Fundadora' },
     ],
   },
 }
@@ -204,7 +104,7 @@ export function MembraPerfil() {
     )
   }
 
-  const livrosLidos = livrosDaMembra.filter(l => l.status === 'lido').length || dados?.historicoRecente.length || 0
+  const livrosLidos = livrosDaMembra.filter(l => l.status === 'Lido').length || dados?.historicoRecente.length || 0
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -215,12 +115,12 @@ export function MembraPerfil() {
       {/* Header do perfil */}
       <div className="bg-white rounded-2xl p-8 shadow-lg shadow-pink-primary/10">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-          <div className="w-32 h-32 bg-gradient-to-br from-pink-primary to-pink-hot rounded-full flex items-center justify-center shadow-lg">
-            <span className="text-6xl">{avatares[membra.id] || '🐱'}</span>
+          <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-pink-primary to-pink-hot rounded-full flex items-center justify-center shadow-lg">
+            <span className="text-5xl md:text-6xl">{avatares[membra.id] || '🐱'}</span>
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-display font-bold text-black">{membra.nome}</h1>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-black">{membra.nome}</h1>
             <p className="text-pink-hot font-medium">@{membra.apelido}</p>
             <p className="text-black/70 mt-3">{membra.bio}</p>
             <p className="text-black/50 text-sm mt-2">🐱 Membra desde {formatarData(membra.membraDesde)}</p>
@@ -276,7 +176,7 @@ export function MembraPerfil() {
       {dados && dados.livrosFavoritos.length > 0 && (
         <div className="bg-white rounded-2xl p-6 shadow-lg shadow-pink-primary/10">
           <h2 className="font-display text-xl font-semibold mb-4">Livros Favoritos ❤️</h2>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
             {dados.livrosFavoritos.map((livro, index) => (
               <div key={index} className="group">
                 <BookCover

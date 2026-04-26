@@ -36,7 +36,7 @@ export function Biblioteca() {
   return (
     <div>
       <header className="mb-8">
-        <h1 className="text-4xl font-bold text-black mb-2">Biblioteca do Clube</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Biblioteca do Clube</h1>
         <p className="text-black/70">Todos os livros que as gatas já leram, estão lendo ou querem ler</p>
       </header>
 

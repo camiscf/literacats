@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { BookCover } from '../components/BookCover/BookCover'
-import { buscarLivro, type Livro } from '../services/api'
-import type { Avaliacao } from '../types'
+import {
+  buscarLivro,
+  buscarAvaliacoesDoLivro,
+  listarMembras,
+  salvarMembraLivro,
+  type Livro,
+  type AvaliacaoLivro,
+  type Membra,
+} from '../services/api'
 
-// Dados mock de avaliações - depois vem do backend
-const avaliacoesMock: (Avaliacao & { membraNome: string })[] = [
-  { livroId: '1', membraId: '1', membraNome: 'Maria', estrelas: 5, resenha: 'Leitura transformadora. A escrita do Itamar é poética e visceral ao mesmo tempo. Chorei no final.', dataLeitura: '2024-03-15' },
-  { livroId: '1', membraId: '2', membraNome: 'Ana', estrelas: 4, resenha: 'Amei a ambientação no sertão e as vozes das personagens. Demorei pra entrar no ritmo mas valeu muito.', dataLeitura: '2024-03-20' },
-  { livroId: '1', membraId: '3', membraNome: 'Julia', estrelas: 5, resenha: 'Obra-prima da literatura brasileira contemporânea. Obrigatório!', dataLeitura: '2024-03-18' },
-]
-
-function Estrelas({ quantidade }: { quantidade: number }) {
+function EstrelasDisplay({ quantidade }: { quantidade: number }) {
   return (
     <span className="text-yellow-500">
       {'★'.repeat(quantidade)}{'☆'.repeat(5 - quantidade)}
@@ -19,19 +19,89 @@ function Estrelas({ quantidade }: { quantidade: number }) {
   )
 }
 
+function EstrelasInput({ valor, onChange }: { valor: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0)
+
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((estrela) => (
+        <button
+          key={estrela}
+          type="button"
+          onClick={() => onChange(estrela)}
+          onMouseEnter={() => setHover(estrela)}
+          onMouseLeave={() => setHover(0)}
+          className="text-3xl transition-transform hover:scale-110"
+        >
+          <span className={estrela <= (hover || valor) ? 'text-yellow-500' : 'text-gray-300'}>
+            ★
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function LivroDetalhes() {
   const { id } = useParams<{ id: string }>()
   const [livro, setLivro] = useState<Livro | null>(null)
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoLivro[]>([])
+  const [membras, setMembras] = useState<Membra[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
+  // Formulário de avaliação
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [membraSelecionada, setMembraSelecionada] = useState('')
+  const [estrelas, setEstrelas] = useState(0)
+  const [resenha, setResenha] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
   useEffect(() => {
     if (!id) return
-    buscarLivro(id)
-      .then(setLivro)
+    Promise.all([
+      buscarLivro(id),
+      buscarAvaliacoesDoLivro(id),
+      listarMembras(),
+    ])
+      .then(([livroData, avaliacoesData, membrasData]) => {
+        setLivro(livroData)
+        setAvaliacoes(avaliacoesData)
+        setMembras(membrasData)
+      })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
   }, [id])
+
+  const handleEnviarAvaliacao = async () => {
+    if (!id || !membraSelecionada || estrelas === 0) return
+
+    setEnviando(true)
+    try {
+      await salvarMembraLivro(membraSelecionada, id, {
+        membraId: membraSelecionada,
+        livroId: id,
+        status: 'Lido',
+        estrelas,
+        resenha: resenha.trim() || undefined,
+        dataLeitura: new Date().toISOString(),
+      })
+
+      // Recarregar avaliações
+      const novasAvaliacoes = await buscarAvaliacoesDoLivro(id)
+      setAvaliacoes(novasAvaliacoes)
+
+      // Limpar formulário
+      setMostrarForm(false)
+      setEstrelas(0)
+      setResenha('')
+      setMembraSelecionada('')
+    } catch (e) {
+      console.error('Erro ao enviar avaliação:', e)
+    } finally {
+      setEnviando(false)
+    }
+  }
 
   if (carregando) {
     return (
@@ -65,10 +135,9 @@ export function LivroDetalhes() {
     )
   }
 
-  const avaliacoes = avaliacoesMock.filter(a => a.livroId === livro.id)
   const mediaEstrelas = avaliacoes.length > 0
-    ? Math.round(avaliacoes.reduce((acc, a) => acc + a.estrelas, 0) / avaliacoes.length)
-    : 0
+    ? (avaliacoes.reduce((acc, a) => acc + (a.estrelas || 0), 0) / avaliacoes.length).toFixed(1)
+    : null
 
   return (
     <div>
@@ -92,17 +161,17 @@ export function LivroDetalhes() {
             {livro.genero}
           </span>
 
-          <h1 className="text-4xl font-display font-bold text-black mb-2">
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-black mb-2">
             {livro.titulo}
           </h1>
 
           <p className="text-xl text-black/70 mb-4">{livro.autor}</p>
 
-          {avaliacoes.length > 0 && (
+          {mediaEstrelas && (
             <div className="flex items-center gap-3 mb-6">
-              <Estrelas quantidade={mediaEstrelas} />
+              <EstrelasDisplay quantidade={Math.round(Number(mediaEstrelas))} />
               <span className="text-black/60">
-                {mediaEstrelas}/5 ({avaliacoes.length} avaliações do clube)
+                {mediaEstrelas}/5 ({avaliacoes.length} {avaliacoes.length === 1 ? 'avaliação' : 'avaliações'} do clube)
               </span>
             </div>
           )}
@@ -114,10 +183,6 @@ export function LivroDetalhes() {
                 <p className="text-lg font-semibold">{livro.paginas}</p>
               </div>
             )}
-            <div className="bg-white rounded-xl px-4 py-3 shadow">
-              <p className="text-black/50 text-xs">Status</p>
-              <p className="text-lg font-semibold text-green-600">✓ Lido</p>
-            </div>
             {livro.dataCadastro && (
               <div className="bg-white rounded-xl px-4 py-3 shadow">
                 <p className="text-black/50 text-xs">Cadastrado em</p>
@@ -128,26 +193,80 @@ export function LivroDetalhes() {
             )}
           </div>
 
-          <div className="flex gap-3">
-            <button className="bg-pink-primary hover:bg-pink-hot text-white px-6 py-3 rounded-xl font-medium transition-colors">
-              ✏️ Escrever resenha
-            </button>
-            <button className="border-2 border-pink-primary text-pink-hot hover:bg-pink-light px-6 py-3 rounded-xl font-medium transition-colors">
-              ♡ Favoritar
-            </button>
-          </div>
+          <button
+            onClick={() => setMostrarForm(!mostrarForm)}
+            className="bg-pink-primary hover:bg-pink-hot text-white px-6 py-3 rounded-xl font-medium transition-colors"
+          >
+            {mostrarForm ? '✕ Cancelar' : '⭐ Avaliar este livro'}
+          </button>
         </div>
       </div>
 
+      {/* Formulário de avaliação */}
+      {mostrarForm && (
+        <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg shadow-pink-primary/10">
+          <h2 className="font-display text-xl font-semibold mb-4">Sua avaliação</h2>
+
+          <div className="space-y-4">
+            {/* Quem está avaliando */}
+            <div>
+              <label className="block text-sm font-medium text-black/70 mb-2">
+                Quem é você?
+              </label>
+              <select
+                value={membraSelecionada}
+                onChange={(e) => setMembraSelecionada(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-pink-light rounded-xl focus:border-pink-primary focus:outline-none"
+              >
+                <option value="">Escolha seu nome...</option>
+                {membras.map((m) => (
+                  <option key={m.id} value={m.id}>{m.nome} (@{m.apelido})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Estrelas */}
+            <div>
+              <label className="block text-sm font-medium text-black/70 mb-2">
+                Nota
+              </label>
+              <EstrelasInput valor={estrelas} onChange={setEstrelas} />
+            </div>
+
+            {/* Resenha */}
+            <div>
+              <label className="block text-sm font-medium text-black/70 mb-2">
+                Resenha <span className="text-black/40">(opcional)</span>
+              </label>
+              <textarea
+                value={resenha}
+                onChange={(e) => setResenha(e.target.value)}
+                placeholder="O que você achou do livro?"
+                rows={4}
+                className="w-full px-4 py-3 border-2 border-pink-light rounded-xl focus:border-pink-primary focus:outline-none resize-none"
+              />
+            </div>
+
+            <button
+              onClick={handleEnviarAvaliacao}
+              disabled={enviando || !membraSelecionada || estrelas === 0}
+              className="bg-pink-primary hover:bg-pink-hot text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {enviando ? 'Enviando...' : 'Enviar avaliação'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Resenhas das membras */}
-      <section className="mt-12">
+      <section className="mt-8">
         <h2 className="text-2xl font-display font-bold text-black mb-6">
           O que as gatas acharam 🐱
         </h2>
 
         {avaliacoes.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow">
-            <p className="text-black/60">Nenhuma resenha ainda. Seja a primeira!</p>
+            <p className="text-black/60">Nenhuma avaliação ainda. Seja a primeira!</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -160,12 +279,14 @@ export function LivroDetalhes() {
                     </div>
                     <div>
                       <p className="font-medium text-black">{avaliacao.membraNome}</p>
-                      <p className="text-xs text-black/50">
-                        {new Date(avaliacao.dataLeitura).toLocaleDateString('pt-BR')}
-                      </p>
+                      {avaliacao.dataLeitura && (
+                        <p className="text-xs text-black/50">
+                          {new Date(avaliacao.dataLeitura).toLocaleDateString('pt-BR')}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <Estrelas quantidade={avaliacao.estrelas} />
+                  {avaliacao.estrelas > 0 && <EstrelasDisplay quantidade={avaliacao.estrelas} />}
                 </div>
                 {avaliacao.resenha && (
                   <p className="text-black/80 leading-relaxed">{avaliacao.resenha}</p>

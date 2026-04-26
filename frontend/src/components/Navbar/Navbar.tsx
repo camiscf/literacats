@@ -1,16 +1,16 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 const links = [
-  { to: '/', label: 'Biblioteca' },
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/membras', label: 'Membras' },
-  { to: '/sorteio', label: 'Sorteio' },
-  { to: '/recomendacoes', label: 'IA' },
+  { to: '/', label: 'Biblioteca', icone: '📚' },
+  { to: '/dashboard', label: 'Dashboard', icone: '📊' },
+  { to: '/membras', label: 'Membras', icone: '👥' },
+  { to: '/sorteio', label: 'Sorteio', icone: '🎰' },
+  { to: '/recomendacoes', label: 'IA', icone: '✨' },
 ]
 
 export function Navbar() {
-  // TODO: pegar do contexto de autenticação
-  const usuarioLogado = true
+  const [menuAberto, setMenuAberto] = useState(false)
 
   return (
     <nav className="bg-pink-primary shadow-lg">
@@ -20,7 +20,8 @@ export function Navbar() {
             Literacats 🐱
           </NavLink>
 
-          <div className="flex items-center gap-1">
+          {/* Links desktop */}
+          <div className="hidden md:flex items-center gap-1">
             {links.map((link) => (
               <NavLink
                 key={link.to}
@@ -36,36 +37,51 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-
-            {/* Separador */}
-            <div className="w-px h-8 bg-white/30 mx-2" />
-
-            {/* Avatar / Login */}
-            {usuarioLogado ? (
-              <NavLink
-                to="/perfil"
-                className={({ isActive }) =>
-                  `w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    isActive
-                      ? 'bg-white text-pink-hot ring-2 ring-white'
-                      : 'bg-pink-hot text-white hover:bg-white hover:text-pink-hot'
-                  }`
-                }
-                title="Meu Perfil"
-              >
-                🐱
-              </NavLink>
-            ) : (
-              <NavLink
-                to="/login"
-                className="px-4 py-2 rounded-lg font-medium bg-white text-pink-hot hover:bg-pink-light transition-colors"
-              >
-                Entrar
-              </NavLink>
-            )}
           </div>
+
+          {/* Botão hamburguer mobile */}
+          <button
+            onClick={() => setMenuAberto(!menuAberto)}
+            className="md:hidden text-white p-2 rounded-lg hover:bg-pink-hot transition-colors"
+            aria-label="Menu"
+          >
+            {menuAberto ? (
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Menu mobile dropdown */}
+      {menuAberto && (
+        <div className="md:hidden border-t border-white/20">
+          <div className="container mx-auto px-4 py-3 space-y-1">
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={() => setMenuAberto(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive
+                      ? 'bg-white text-pink-hot'
+                      : 'text-white hover:bg-pink-hot'
+                  }`
+                }
+              >
+                <span>{link.icone}</span>
+                {link.label}
+              </NavLink>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

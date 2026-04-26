@@ -10,25 +10,18 @@ public class InMemoryDataService : IDataService
 {
     private readonly List<Livro> _livros = new()
     {
-        new() { Id = "1", Titulo = "Torto Arado", Autor = "Itamar Vieira Junior", Genero = "Ficção Brasileira", Paginas = 264, DataCadastro = DateTime.UtcNow },
-        new() { Id = "2", Titulo = "A Vegetariana", Autor = "Han Kang", Genero = "Ficção", Paginas = 160, DataCadastro = DateTime.UtcNow },
-        new() { Id = "3", Titulo = "Quarto de Despejo", Autor = "Carolina Maria de Jesus", Genero = "Não-ficção", Paginas = 200, DataCadastro = DateTime.UtcNow },
-        new() { Id = "4", Titulo = "Amora", Autor = "Natalia Borges Polesso", Genero = "Contos", Paginas = 200, DataCadastro = DateTime.UtcNow },
-        new() { Id = "5", Titulo = "O Conto da Aia", Autor = "Margaret Atwood", Genero = "Distopia", Paginas = 368, DataCadastro = DateTime.UtcNow },
-        new() { Id = "6", Titulo = "Hibisco Roxo", Autor = "Chimamanda Ngozi Adichie", Genero = "Ficção", Paginas = 328, DataCadastro = DateTime.UtcNow },
+        new() { Id = "1", Titulo = "Nem Todo Outono É Igual", Autor = "Carla Madeira", Genero = "Ficção Brasileira", Paginas = 224, DataCadastro = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
     };
 
     private readonly List<Membra> _membras = new()
     {
-        new() { Id = "1", Nome = "Maria Silva", Apelido = "mari", Bio = "Apaixonada por ficção brasileira e café forte ☕", MetaLeituraAnual = 24, MembraDesde = DateTime.UtcNow },
-        new() { Id = "2", Nome = "Ana Carolina", Apelido = "anacarol", Bio = "Devoradora de romances e fantasias 🧙‍♀️", MetaLeituraAnual = 36, MembraDesde = DateTime.UtcNow },
-        new() { Id = "3", Nome = "Julia Santos", Apelido = "juju", Bio = "Não-ficção é meu combustível 🚀", MetaLeituraAnual = 20, MembraDesde = DateTime.UtcNow },
-        new() { Id = "4", Nome = "Beatriz Oliveira", Apelido = "bia", Bio = "Poesia e contos curtos sempre 📝", MetaLeituraAnual = 18, MembraDesde = DateTime.UtcNow },
-        new() { Id = "5", Nome = "Camila Rocha", Apelido = "cami", Bio = "Distopias e ficção científica 🛸", MetaLeituraAnual = 30, MembraDesde = DateTime.UtcNow },
-        new() { Id = "6", Nome = "Fernanda Lima", Apelido = "fe", Bio = "Terror e suspense pra ler de noite 👻", MetaLeituraAnual = 24, MembraDesde = DateTime.UtcNow },
+        new() { Id = "1", Nome = "Camila", Apelido = "camis", Bio = "Adoro correr, cozinhar, ler e às vezes lembro que também sou programadora", MetaLeituraAnual = 12, MembraDesde = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
     };
 
-    private readonly List<MembraLivro> _membraLivros = new();
+    private readonly List<MembraLivro> _membraLivros = new()
+    {
+        new() { MembraId = "1", LivroId = "1", Status = StatusLeitura.Lido, DataLeitura = new DateTime(2026, 2, 28, 0, 0, 0, DateTimeKind.Utc) },
+    };
     private Sorteio? _sorteioAtual;
 
     // Livros
@@ -51,9 +44,30 @@ public class InMemoryDataService : IDataService
     public Task<Membra?> BuscarMembraAsync(string id) =>
         Task.FromResult(_membras.FirstOrDefault(m => m.Id == id));
 
+    public Task<Membra?> AutenticarMembraAsync(string membraId, string pin)
+    {
+        var membra = _membras.FirstOrDefault(m => m.Id == membraId);
+        if (membra is null || string.IsNullOrEmpty(membra.PinHash)) return Task.FromResult<Membra?>(null);
+        var ok = BCrypt.Net.BCrypt.Verify(pin, membra.PinHash);
+        return Task.FromResult(ok ? membra : null);
+    }
+
+    public Task DefinirPinAsync(string membraId, string pin)
+    {
+        var membra = _membras.FirstOrDefault(m => m.Id == membraId)
+            ?? throw new InvalidOperationException("Membra não encontrada");
+        if (!string.IsNullOrEmpty(membra.PinHash))
+            throw new InvalidOperationException("Membra já tem PIN definido");
+        membra.PinHash = BCrypt.Net.BCrypt.HashPassword(pin);
+        return Task.CompletedTask;
+    }
+
     // Relação Membra-Livro
     public Task<List<MembraLivro>> BuscarLivrosDaMembraAsync(string membraId) =>
         Task.FromResult(_membraLivros.Where(ml => ml.MembraId == membraId).ToList());
+
+    public Task<List<MembraLivro>> BuscarAvaliacoesDoLivroAsync(string livroId) =>
+        Task.FromResult(_membraLivros.Where(ml => ml.LivroId == livroId && ml.Estrelas.HasValue).ToList());
 
     public Task<MembraLivro?> BuscarMembraLivroAsync(string membraId, string livroId) =>
         Task.FromResult(_membraLivros.FirstOrDefault(ml => ml.MembraId == membraId && ml.LivroId == livroId));

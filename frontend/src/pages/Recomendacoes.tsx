@@ -22,7 +22,7 @@ export function Recomendacoes() {
   return (
     <div className="max-w-2xl mx-auto">
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-black mb-2">Recomendações da Clarice ✨</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Recomendações da Clarice ✨</h1>
         <p className="text-black/70">A Clarice conhece o gosto das gatas e vai sugerir o próximo livro</p>
       </header>
 

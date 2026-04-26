@@ -1,44 +1,32 @@
 import { useState } from 'react'
 import { BookCover } from '../components/BookCover/BookCover'
 
-// Dados mock da membra
+// Dados da membra logada — depois vem do backend via auth
 const membraMock = {
-  nome: 'Maria Silva',
-  apelido: 'Mari',
-  bio: 'Apaixonada por ficção brasileira e café forte ☕',
-  membraDesde: 'Março 2023',
+  nome: 'Camila',
+  apelido: 'camis',
+  bio: 'Adoro correr, cozinhar, ler e às vezes lembro que também sou programadora',
+  membraDesde: 'Fevereiro 2026',
   foto: null,
-  metaLeituraAnual: 24,
-  livrosLidosNoAno: 14,
-  totalLivrosLidos: 32,
-  totalPaginas: 9840,
-  totalResenhas: 18,
-  mediaAvaliacoes: 4.3,
+  metaLeituraAnual: 12,
+  livrosLidosNoAno: 1,
+  totalLivrosLidos: 1,
+  totalPaginas: 224,
+  totalResenhas: 0,
+  mediaAvaliacoes: 0,
 }
 
-const livrosFavoritos = [
-  { titulo: 'Torto Arado', autor: 'Itamar Vieira Junior' },
-  { titulo: 'A Vegetariana', autor: 'Han Kang' },
-  { titulo: 'Hibisco Roxo', autor: 'Chimamanda Ngozi Adichie' },
-]
+const livrosFavoritos: { titulo: string; autor: string }[] = []
 
 const historicoRecente = [
-  { titulo: 'O Conto da Aia', autor: 'Margaret Atwood', data: 'Mai 2024', nota: 4 },
-  { titulo: 'Hibisco Roxo', autor: 'Chimamanda Ngozi Adichie', data: 'Abr 2024', nota: 5 },
-  { titulo: 'Quarto de Despejo', autor: 'Carolina Maria de Jesus', data: 'Mar 2024', nota: 5 },
+  { titulo: 'Nem Todo Outono É Igual', autor: 'Carla Madeira', data: 'Fev 2026', nota: 0 },
 ]
 
-const queroLer = [
-  { titulo: 'Pequena Coreografia do Adeus', autor: 'Aline Bei' },
-  { titulo: 'Um Defeito de Cor', autor: 'Ana Maria Gonçalves' },
-]
+const queroLer: { titulo: string; autor: string }[] = []
 
 const conquistas = [
   { icone: '📖', titulo: 'Primeira Leitura', descricao: 'Leu o primeiro livro do clube' },
-  { icone: '✍️', titulo: 'Crítica Literária', descricao: 'Escreveu 10 resenhas' },
-  { icone: '🔥', titulo: 'Em Chamas', descricao: 'Leu 3 livros seguidos' },
-  { icone: '⭐', titulo: 'Exigente', descricao: 'Média de avaliação acima de 4' },
-  { icone: '🐱', titulo: 'Gata Veterana', descricao: '1 ano no clube' },
+  { icone: '🐱', titulo: 'Gata Fundadora', descricao: 'Estava no clube desde o início' },
 ]
 
 function Estrelas({ quantidade }: { quantidade: number }) {
@@ -85,14 +73,14 @@ export function Perfil() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Banner "Meu Perfil" */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-display font-bold text-black">Meu Perfil</h1>
         <div className="flex items-center gap-2">
-          <button className="px-4 py-2 text-black/60 hover:text-black hover:bg-white rounded-lg transition-colors flex items-center gap-2">
-            ⚙️ Configurações
+          <button className="px-3 py-2 text-sm text-black/60 hover:text-black hover:bg-white rounded-lg transition-colors flex items-center gap-1.5">
+            ⚙️ <span className="hidden sm:inline">Configurações</span>
           </button>
-          <button className="px-4 py-2 text-red-accent hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
-            🚪 Sair
+          <button className="px-3 py-2 text-sm text-red-accent hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5">
+            🚪 <span className="hidden sm:inline">Sair</span>
           </button>
         </div>
       </div>
@@ -102,8 +90,8 @@ export function Perfil() {
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Avatar */}
           <div className="relative group">
-            <div className="w-32 h-32 bg-gradient-to-br from-pink-primary to-pink-hot rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-6xl">🐱</span>
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-pink-primary to-pink-hot rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-5xl md:text-6xl">🐱</span>
             </div>
             <button className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-pink-hot hover:bg-pink-light transition-colors">
               📷
@@ -112,7 +100,7 @@ export function Perfil() {
 
           {/* Info */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-display font-bold text-black">{membraMock.nome}</h1>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-black">{membraMock.nome}</h1>
             <p className="text-pink-hot font-medium">@{membraMock.apelido.toLowerCase()}</p>
 
             {/* Bio editável */}
@@ -241,7 +229,7 @@ export function Perfil() {
       {/* Livros favoritos */}
       <div className="bg-white rounded-2xl p-6 shadow-lg shadow-pink-primary/10">
         <h2 className="font-display text-xl font-semibold mb-4">Livros Favoritos ❤️</h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
           {livrosFavoritos.map((livro, index) => (
             <div key={index} className="group cursor-pointer">
               <BookCover
@@ -249,7 +237,7 @@ export function Perfil() {
                 autor={livro.autor}
                 className="aspect-[2/3] rounded-lg shadow group-hover:shadow-lg group-hover:-translate-y-1 transition-all"
               />
-              <p className="text-xs text-black/70 mt-2 line-clamp-1">{livro.titulo}</p>
+              <p className="text-xs text-black/70 mt-1.5 line-clamp-1">{livro.titulo}</p>
             </div>
           ))}
 

@@ -7,8 +7,6 @@ import { Membras } from './pages/Membras'
 import { MembraPerfil } from './pages/MembraPerfil'
 import { Sorteio } from './pages/Sorteio'
 import { Recomendacoes } from './pages/Recomendacoes'
-import { Perfil } from './pages/Perfil'
-
 function App() {
   return (
     <BrowserRouter>
@@ -21,7 +19,6 @@ function App() {
           <Route path="membra/:id" element={<MembraPerfil />} />
           <Route path="sorteio" element={<Sorteio />} />
           <Route path="recomendacoes" element={<Recomendacoes />} />
-          <Route path="perfil" element={<Perfil />} />
         </Route>
       </Routes>
     </BrowserRouter>

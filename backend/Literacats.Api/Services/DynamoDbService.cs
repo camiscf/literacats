@@ -101,6 +101,38 @@ public class DynamoDbService : IDataService
         return doc == null ? null : MapToMembra(doc);
     }
 
+    public async Task<Membra?> AutenticarMembraAsync(string membraId, string pin)
+    {
+        var membra = await BuscarMembraAsync(membraId);
+        if (membra is null || string.IsNullOrEmpty(membra.PinHash)) return null;
+        return BCrypt.Net.BCrypt.Verify(pin, membra.PinHash) ? membra : null;
+    }
+
+    public async Task DefinirPinAsync(string membraId, string pin)
+    {
+        var membra = await BuscarMembraAsync(membraId)
+            ?? throw new InvalidOperationException("Membra não encontrada");
+        if (!string.IsNullOrEmpty(membra.PinHash))
+            throw new InvalidOperationException("Membra já tem PIN definido");
+
+        // Update parcial só do PinHash pra não sobrescrever os outros campos do item
+        var hash = BCrypt.Net.BCrypt.HashPassword(pin);
+        await _dynamoDb.UpdateItemAsync(new UpdateItemRequest
+        {
+            TableName = _tableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                { "PK", new AttributeValue { S = $"MEMBRA#{membraId}" } },
+                { "SK", new AttributeValue { S = $"MEMBRA#{membraId}" } }
+            },
+            UpdateExpression = "SET PinHash = :hash",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":hash", new AttributeValue { S = hash } }
+            }
+        });
+    }
+
     #endregion
 
     #region MembraLivro
@@ -119,6 +151,24 @@ public class DynamoDbService : IDataService
         };
 
         var response = await _dynamoDb.QueryAsync(request);
+        return response.Items.Select(MapToMembraLivro).ToList();
+    }
+
+    // Busca todas as avaliações de um livro varrendo as membras
+    // Para o volume do clube (10-30 membras) um scan filtrado é aceitável
+    public async Task<List<MembraLivro>> BuscarAvaliacoesDoLivroAsync(string livroId)
+    {
+        var request = new ScanRequest
+        {
+            TableName = _tableName,
+            FilterExpression = "SK = :sk AND attribute_exists(Estrelas)",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":sk", new AttributeValue { S = $"LIVRO#{livroId}" } }
+            }
+        };
+
+        var response = await _dynamoDb.ScanAsync(request);
         return response.Items.Select(MapToMembraLivro).ToList();
     }
 
@@ -314,7 +364,8 @@ public class DynamoDbService : IDataService
             Bio = item.GetValueOrDefault("Bio")?.S,
             Foto = item.GetValueOrDefault("Foto")?.S,
             MetaLeituraAnual = item.TryGetValue("MetaLeituraAnual", out var m) && m.N != null ? int.Parse(m.N) : 12,
-            MembraDesde = item.TryGetValue("MembraDesde", out var md) ? DateTime.Parse(md.S) : DateTime.UtcNow
+            MembraDesde = item.TryGetValue("MembraDesde", out var md) ? DateTime.Parse(md.S) : DateTime.UtcNow,
+            PinHash = item.GetValueOrDefault("PinHash")?.S
         };
     }
 
@@ -328,7 +379,8 @@ public class DynamoDbService : IDataService
             Bio = doc.ContainsKey("Bio") ? doc["Bio"].AsString() : null,
             Foto = doc.ContainsKey("Foto") ? doc["Foto"].AsString() : null,
             MetaLeituraAnual = doc.ContainsKey("MetaLeituraAnual") ? doc["MetaLeituraAnual"].AsInt() : 12,
-            MembraDesde = doc.ContainsKey("MembraDesde") ? DateTime.Parse(doc["MembraDesde"].AsString()) : DateTime.UtcNow
+            MembraDesde = doc.ContainsKey("MembraDesde") ? DateTime.Parse(doc["MembraDesde"].AsString()) : DateTime.UtcNow,
+            PinHash = doc.ContainsKey("PinHash") ? doc["PinHash"].AsString() : null
         };
     }
 

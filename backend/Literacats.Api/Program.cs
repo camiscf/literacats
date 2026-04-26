@@ -1,8 +1,15 @@
+using System.Text.Json.Serialization;
 using Amazon.DynamoDBv2;
 using Literacats.Api.Endpoints;
 using Literacats.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar JSON para aceitar enums como string
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Configurar serviço de dados (InMemory ou DynamoDB)
 if (builder.Configuration.GetValue<bool>("UseDynamoDB"))

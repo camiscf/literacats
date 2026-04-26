@@ -27,7 +27,7 @@ export interface Membra {
 export interface MembraLivro {
   membraId: string
   livroId: string
-  status: 'quero_ler' | 'lendo' | 'lido'
+  status: 'QueroLer' | 'Lendo' | 'Lido'
   estrelas?: number
   resenha?: string
   dataLeitura?: string
@@ -72,6 +72,21 @@ export async function adicionarLivro(livro: Omit<Livro, 'id' | 'dataCadastro'>):
     body: JSON.stringify(livro),
   })
   if (!res.ok) throw new Error('Erro ao adicionar livro')
+  return res.json()
+}
+
+export interface AvaliacaoLivro {
+  membraId: string
+  livroId: string
+  membraNome: string
+  estrelas: number
+  resenha?: string
+  dataLeitura?: string
+}
+
+export async function buscarAvaliacoesDoLivro(livroId: string): Promise<AvaliacaoLivro[]> {
+  const res = await fetch(`${API_URL}/livros/${livroId}/avaliacoes`)
+  if (!res.ok) return []
   return res.json()
 }
 

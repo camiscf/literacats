@@ -5,11 +5,6 @@ import { listarMembras, type Membra } from '../services/api'
 // Avatares por ID (depois pode vir do backend)
 const avatares: Record<string, string> = {
   '1': '🐱',
-  '2': '🦊',
-  '3': '🦉',
-  '4': '🐰',
-  '5': '🐼',
-  '6': '🦇',
 }
 
 function formatarData(data?: string): string {
@@ -53,16 +48,16 @@ export function Membras() {
   return (
     <div>
       <header className="mb-8">
-        <h1 className="text-4xl font-bold text-black mb-2">Membras do Clube</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Membras do Clube</h1>
         <p className="text-black/70">As gatas leitoras do Literacats 🐱</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {membras.map((membra) => (
           <Link
             key={membra.id}
             to={`/membra/${membra.id}`}
-            className="group bg-white rounded-2xl p-6 shadow-lg shadow-pink-primary/10 hover:shadow-xl hover:shadow-pink-primary/20 transition-all hover:-translate-y-1"
+            className="group bg-white rounded-2xl p-5 md:p-6 shadow-lg shadow-pink-primary/10 hover:shadow-xl hover:shadow-pink-primary/20 transition-all hover:-translate-y-1"
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-pink-primary to-pink-hot rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">

@@ -1,39 +1,32 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
-// Histórico de livros do clube - um por mês
+// Histórico de livros do clube
 const historicoLivros = [
-  { mes: 'Jan/24', livro: 'Torto Arado', nota: 4.7 },
-  { mes: 'Fev/24', livro: 'A Vegetariana', nota: 4.2 },
-  { mes: 'Mar/24', livro: 'Quarto de Despejo', nota: 4.8 },
-  { mes: 'Abr/24', livro: 'Hibisco Roxo', nota: 4.5 },
-  { mes: 'Mai/24', livro: 'O Conto da Aia', nota: 4.3 },
+  { mes: 'Fev/26', livro: 'Nem Todo Outono É Igual', nota: 0 },
 ]
 
 const generos = [
-  { nome: 'Ficção', quantidade: 12 },
-  { nome: 'Não-ficção', quantidade: 4 },
-  { nome: 'Romance', quantidade: 3 },
-  { nome: 'Distopia', quantidade: 2 },
+  { nome: 'Ficção Brasileira', quantidade: 1 },
 ]
 
 const proporcaoAutores = [
-  { nome: 'Mulheres', quantidade: 15 },
-  { nome: 'Homens', quantidade: 6 },
+  { nome: 'Mulheres', quantidade: 1 },
+  { nome: 'Homens', quantidade: 0 },
 ]
 
 const CORES_GENERO = ['#F472B6', '#EC4899', '#EF4444', '#FCE7F3']
 const CORES_AUTORES = ['#F472B6', '#1A1A1A']
 
 export function Dashboard() {
-  const totalLivros = 21
-  const totalPaginas = 6840
-  const mediaGeral = 4.5
-  const anosAtivo = 2
+  const totalLivros = 1
+  const totalPaginas = 224
+  const mediaGeral = 0
+  const anosAtivo = 0
 
   return (
     <div>
       <header className="mb-8">
-        <h1 className="text-4xl font-bold text-black mb-2">Dashboard do Clube</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-2">Dashboard do Clube</h1>
         <p className="text-black/70">A jornada literária das Literacats 🐱</p>
       </header>
 
@@ -52,7 +45,7 @@ export function Dashboard() {
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={historicoLivros} layout="vertical">
               <XAxis type="number" domain={[0, 5]} />
-              <YAxis type="category" dataKey="livro" width={120} tick={{ fontSize: 12 }} />
+              <YAxis type="category" dataKey="livro" width={100} tick={{ fontSize: 11 }} />
               <Tooltip
                 formatter={(value: number) => [`${value}/5`, 'Nota']}
                 labelFormatter={(label) => `📖 ${label}`}
