@@ -10,17 +10,34 @@ public class InMemoryDataService : IDataService
 {
     private readonly List<Livro> _livros = new()
     {
-        new() { Id = "1", Titulo = "Nem Todo Outono É Igual", Autor = "Carla Madeira", Genero = "Ficção Brasileira", Paginas = 224, DataCadastro = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "1", Titulo = "Quicksilver", Autor = "Callie Hart", Genero = "Romantasy", Paginas = 624,
+                Capa = "https://covers.openlibrary.org/b/id/15154838-L.jpg",
+                DataCadastro = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "2", Titulo = "Nem Todo Outono É Igual", Autor = "Misty Wilson", Genero = "Ficção Brasileira", Paginas = 224,
+                DataCadastro = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "3", Titulo = "Como Arruinar Um Casamento", Autor = "Alison Espach", Genero = "Ficção Estrangeira", Paginas = 384,
+                Capa = "https://covers.openlibrary.org/b/id/15127690-L.jpg",
+                DataCadastro = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "4", Titulo = "Suíte em Tóquio", Autor = "Giovana Madalosso", Genero = "Ficção Brasileira", Paginas = 200,
+                Capa = "https://covers.openlibrary.org/b/id/10839541-L.jpg",
+                DataCadastro = new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc) },
     };
 
     private readonly List<Membra> _membras = new()
     {
-        new() { Id = "1", Nome = "Camila", Apelido = "camis", Bio = "Adoro correr, cozinhar, ler e às vezes lembro que também sou programadora", MetaLeituraAnual = 12, MembraDesde = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "1", Nome = "Camila", Apelido = "camis", Bio = "Adoro correr, cozinhar, ler e às vezes lembro que também sou programadora", MetaLeituraAnual = 12, MembraDesde = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "2", Nome = "Sara", Apelido = "sara", MembraDesde = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "3", Nome = "Gio", Apelido = "gio", MembraDesde = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "4", Nome = "Larissa", Apelido = "lari", MembraDesde = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+        new() { Id = "5", Nome = "Kamilla", Apelido = "Kamilla", MembraDesde = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
     };
 
     private readonly List<MembraLivro> _membraLivros = new()
     {
-        new() { MembraId = "1", LivroId = "1", Status = StatusLeitura.Lido, DataLeitura = new DateTime(2026, 2, 28, 0, 0, 0, DateTimeKind.Utc) },
+        new() { MembraId = "1", LivroId = "1", Status = StatusLeitura.Lido, DataLeitura = new DateTime(2026, 1, 31, 0, 0, 0, DateTimeKind.Utc) },
+        new() { MembraId = "1", LivroId = "2", Status = StatusLeitura.Lido, DataLeitura = new DateTime(2026, 2, 28, 0, 0, 0, DateTimeKind.Utc) },
+        new() { MembraId = "1", LivroId = "3", Status = StatusLeitura.Lido, DataLeitura = new DateTime(2026, 3, 31, 0, 0, 0, DateTimeKind.Utc) },
+        new() { MembraId = "1", LivroId = "4", Status = StatusLeitura.Lendo },
     };
     private Sorteio? _sorteioAtual;
 
@@ -43,6 +60,15 @@ public class InMemoryDataService : IDataService
 
     public Task<Membra?> BuscarMembraAsync(string id) =>
         Task.FromResult(_membras.FirstOrDefault(m => m.Id == id));
+
+    public Task<Membra?> AtualizarMembraAsync(string id, string? bio, int? metaLeituraAnual)
+    {
+        var membra = _membras.FirstOrDefault(m => m.Id == id);
+        if (membra is null) return Task.FromResult<Membra?>(null);
+        if (bio is not null) membra.Bio = bio;
+        if (metaLeituraAnual is not null) membra.MetaLeituraAnual = metaLeituraAnual.Value;
+        return Task.FromResult<Membra?>(membra);
+    }
 
     public Task<Membra?> AutenticarMembraAsync(string membraId, string pin)
     {

@@ -51,6 +51,7 @@ export function Biblioteca() {
               <BookCover
                 titulo={livro.titulo}
                 autor={livro.autor}
+                capa={livro.capa}
                 className="w-full aspect-[2/3] rounded-lg shadow-lg group-hover:shadow-xl group-hover:shadow-pink-primary/20 transition-all group-hover:-translate-y-1"
               />
               <span className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-pink-hot px-2 py-1 rounded-full text-xs font-medium shadow">

@@ -4,25 +4,24 @@ Lista de tarefas pendentes para o desenvolvimento do app.
 
 ---
 
-## Em Progresso
+## Próximo: Deploy
 
-### 🔄 Integração DynamoDB
-- [x] Criar interface `IDataService`
-- [x] Refatorar `DataService` → `InMemoryDataService`
-- [x] Criar `DynamoDbService` com single-table design
-- [x] Atualizar endpoints para async
-- [x] Criar scripts de criação de tabela e seed
-- [ ] **PRÓXIMO:** Instalar Docker Desktop
-- [ ] Subir DynamoDB Local (`docker run -p 8000:8000 amazon/dynamodb-local`)
-- [ ] Criar tabela com script `backend/scripts/create-table.sh`
-- [ ] Popular dados com script `backend/scripts/seed-data.sh`
-- [ ] Testar com `UseDynamoDB=true` no `appsettings.Development.json`
+- [ ] **Configurar credenciais AWS** (`aws configure`)
+- [ ] **Deploy do frontend** — `vite build` → S3 + CloudFront
+- [ ] **Deploy do backend** — Lambda Function URL (.NET 8)
+- [ ] **Criar tabela DynamoDB na AWS** + seed com dados reais
+- [ ] **Domínio e HTTPS** — domínio customizado + certificado SSL no CloudFront
 
 ---
 
 ## Próximas Tasks
 
-### Autenticação e Perfil
+### Dados Reais
+
+- [ ] **Adicionar membras reais do clube** — atualizar seed com nomes, bios, etc.
+- [ ] **Adicionar livros reais** — histórico completo do clube
+
+### Autenticação (pós-MVP)
 
 - [ ] **Implementar login com AWS Cognito**
   - Criar User Pool no Cognito
@@ -31,29 +30,7 @@ Lista de tarefas pendentes para o desenvolvimento do app.
   - Proteger rotas que precisam de login
   - Tela de login/cadastro funcional
 
-- [ ] **Lista pessoal de livros por membra**
-  - Após login, membra pode marcar livros como:
-    - **Lendo** — livro atual
-    - **Lido** — já terminou
-    - **Quero ler** — na fila
-  - Salvar no DynamoDB
-  - Sincronizar com página de perfil público (`/membra/:id`)
-  - Mostrar status do livro no card da biblioteca
-
-- [ ] **Avaliação de livros**
-  - Permitir avaliar livros com estrelas (1-5)
-  - Campo opcional de resenha
-  - Exibir avaliações na página do livro (`/livro/:id`)
-  - Calcular média de avaliações do clube
-
----
-
 ### Frontend
-
-- [ ] **Responsividade mobile**
-  - Testar e ajustar todas as páginas em telas pequenas
-  - Menu hamburguer na navbar mobile
-  - Cards adaptáveis
 
 - [ ] **Página de cadastro de livro**
   - Formulário para adicionar novo livro à biblioteca
@@ -70,17 +47,14 @@ Lista de tarefas pendentes para o desenvolvimento do app.
   - Qual livro ganhou em cada mês
   - Quem sugeriu o livro vencedor
 
-- [ ] **Perfil**
+- [ ] **Perfil da membra**
   - Editar foto de perfil
-  - Ajustar aba de configuração
   - Cadastro de livros favoritos
-
-- [ ] **Membras**
-  - Permitir ver meta literaria no perfil das membra quando clica
+  - Meta literária visível no perfil público
 
 - [ ] **Biblioteca**
-  - Permitir favoritar um livro vinculando ao perfil conectado
-  - Adicionar um destaque no livro do mes, vinculando ao livro sorteado ou permitir que alguem com perfil de adm adicione essa tag de livro do mes
+  - Permitir favoritar um livro vinculando ao perfil
+  - Destaque no livro do mês
 
 ---
 
@@ -91,23 +65,13 @@ Lista de tarefas pendentes para o desenvolvimento do app.
   - Montar prompt com histórico do clube
   - Retornar sugestão formatada
 
-- [ ] **Ajuste de membras e livros mockados para valores reais**
-
 ---
 
-### Infra e Deploy
-
-- [ ] **Configurar AWS SAM ou CDK**
-  - Template para Lambda + DynamoDB + Cognito
-  - Variáveis de ambiente
+### Infra
 
 - [ ] **CI/CD com GitHub Actions**
   - Build e deploy automático do frontend (S3)
   - Build e deploy do backend (Lambda)
-
-- [ ] **Domínio e HTTPS**
-  - Configurar domínio customizado
-  - Certificado SSL no CloudFront
 
 ---
 
@@ -127,6 +91,13 @@ Lista de tarefas pendentes para o desenvolvimento do app.
 - [x] **Backend .NET 8 Minimal API** (endpoints livros, membras, sorteio)
 - [x] **Integração Frontend ↔ Backend** (API service no React)
 - [x] **Arquitetura DynamoDB** (IDataService, InMemoryDataService, DynamoDbService)
+- [x] **Integração DynamoDB Local** — Docker + tabela + seed + backend conectado
+- [x] **Responsividade mobile** — Navbar hamburguer + ajustes em todas as páginas
+- [x] **Dados reais (parcial)** — Camila (@camis) + "Nem Todo Outono É Igual" (Misty Wilson)
+- [x] **Avaliação de livros** — estrelas + resenha, endpoint `GET /livros/{id}/avaliacoes`, UI funcional
+- [x] **App coletivo** — removido conceito de login, rota /perfil removida
+- [x] **Título e favicon** — "Literacats 🐱" + emoji de gato
+- [x] **JsonStringEnumConverter** — enums serializados como string no backend
 
 ---
 
@@ -141,32 +112,30 @@ Lista de tarefas pendentes para o desenvolvimento do app.
 
 ---
 
-## Como Continuar Amanhã
+## Como Subir o Ambiente Local
 
-1. **Instalar Docker Desktop** (https://docker.com/products/docker-desktop)
-2. Reiniciar PC se necessário
-3. Rodar DynamoDB Local:
+1. Subir DynamoDB Local:
    ```bash
-   docker run -p 8000:8000 amazon/dynamodb-local
+   docker start dynamodb-local || docker run -d --name dynamodb-local -p 8000:8000 amazon/dynamodb-local
    ```
-4. Criar tabela:
+2. Criar tabela (só na primeira vez):
    ```bash
    cd backend/scripts && bash create-table.sh
    ```
-5. Popular dados:
+3. Popular dados (só na primeira vez):
    ```bash
    bash seed-data.sh
    ```
-6. Alterar `appsettings.Development.json`:
-   ```json
-   "UseDynamoDB": true
-   ```
-7. Rodar backend:
+4. Rodar backend:
    ```bash
    cd backend/Literacats.Api && dotnet run
    ```
-8. Testar no frontend (http://localhost:5174)
+5. Rodar frontend:
+   ```bash
+   cd frontend && npm run dev
+   ```
+6. Acessar: frontend em http://localhost:5173 | backend em http://localhost:5203
 
 ---
 
-_Última atualização: Março 2026_
+_Última atualização: 13 de março de 2026_

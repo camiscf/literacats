@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import { obterSorteioAtual, adicionarSugestao, realizarSorteio, type Sorteio as SorteioType, type Sugestao } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
 type FaseSorteio = 'aguardando' | 'embaralhando' | 'roleta' | 'revelado'
 
 export function Sorteio() {
+  const { membra } = useAuth()
   const [sorteio, setSorteio] = useState<SorteioType | null>(null)
   const [novaSugestao, setNovaSugestao] = useState('')
   const [fase, setFase] = useState<FaseSorteio>('aguardando')
@@ -30,11 +32,10 @@ export function Sorteio() {
   const sugestoes = sorteio?.sugestoes || []
 
   const handleAdicionarSugestao = async () => {
-    if (!novaSugestao.trim()) return
+    if (!novaSugestao.trim() || !membra) return
 
     try {
-      // Por enquanto usa membra fixa (depois vem do auth)
-      await adicionarSugestao(novaSugestao, '1', 'Você')
+      await adicionarSugestao(novaSugestao, membra.id, membra.nome)
       // Recarrega sorteio para ter lista atualizada
       const atualizado = await obterSorteioAtual()
       setSorteio(atualizado)

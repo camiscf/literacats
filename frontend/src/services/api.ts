@@ -1,6 +1,8 @@
 // Serviço de API do Literacats
 
-const API_URL = 'http://localhost:5203'
+// Em produção, VITE_API_URL é setado no painel da Vercel apontando pra Function URL
+// do Lambda. Em dev, cai no localhost padrão.
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5203'
 
 // Tipos que correspondem ao backend
 export interface Livro {
@@ -22,6 +24,7 @@ export interface Membra {
   foto?: string
   metaLeituraAnual: number
   membraDesde?: string
+  temPin: boolean
 }
 
 export interface MembraLivro {
@@ -145,6 +148,44 @@ export async function realizarSorteio(): Promise<Sorteio> {
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.erro || 'Erro ao realizar sorteio')
+  }
+  return res.json()
+}
+
+export async function atualizarMembra(
+  id: string,
+  dados: { bio?: string; metaLeituraAnual?: number }
+): Promise<Membra> {
+  const res = await fetch(`${API_URL}/membras/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados),
+  })
+  if (!res.ok) throw new Error('Erro ao atualizar perfil')
+  return res.json()
+}
+
+// Auth
+export async function login(membraId: string, pin: string): Promise<Membra> {
+  const res = await fetch(`${API_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ membraId, pin }),
+  })
+  if (res.status === 401) throw new Error('PIN incorreto')
+  if (!res.ok) throw new Error('Erro ao entrar')
+  return res.json()
+}
+
+export async function criarPin(membraId: string, pin: string): Promise<Membra> {
+  const res = await fetch(`${API_URL}/membras/${membraId}/criar-pin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.erro || 'Erro ao criar PIN')
   }
   return res.json()
 }

@@ -3,16 +3,25 @@ import { useState, useEffect } from 'react'
 interface BookCoverProps {
   titulo: string
   autor: string
+  capa?: string
   className?: string
 }
 
-export function BookCover({ titulo, autor, className = '' }: BookCoverProps) {
+export function BookCover({ titulo, autor, capa, className = '' }: BookCoverProps) {
   const [urlCapa, setUrlCapa] = useState<string | null>(null)
   const [erro, setErro] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    // Busca a capa pelo título e autor na Open Library
+    // Capa explícita do banco tem prioridade — evita rodar a busca quando já sabemos a URL
+    if (capa) {
+      setUrlCapa(capa)
+      setErro(false)
+      setCarregando(false)
+      return
+    }
+
+    // Sem capa explícita: tenta achar na Open Library pelo título + autor
     const buscarCapa = async () => {
       try {
         const query = encodeURIComponent(`${titulo} ${autor}`)
@@ -22,7 +31,6 @@ export function BookCover({ titulo, autor, className = '' }: BookCoverProps) {
         const data = await response.json()
 
         if (data.docs?.[0]?.cover_i) {
-          // Usa o cover_id para montar a URL da capa
           const coverId = data.docs[0].cover_i
           setUrlCapa(`https://covers.openlibrary.org/b/id/${coverId}-M.jpg`)
         } else {
@@ -36,7 +44,7 @@ export function BookCover({ titulo, autor, className = '' }: BookCoverProps) {
     }
 
     buscarCapa()
-  }, [titulo, autor])
+  }, [titulo, autor, capa])
 
   // Carregando ou erro: mostra placeholder
   if (carregando) {

@@ -1,16 +1,23 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 
 const links = [
   { to: '/', label: 'Biblioteca', icone: '📚' },
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
   { to: '/membras', label: 'Membras', icone: '👥' },
   { to: '/sorteio', label: 'Sorteio', icone: '🎰' },
-  { to: '/recomendacoes', label: 'IA', icone: '✨' },
 ]
 
 export function Navbar() {
   const [menuAberto, setMenuAberto] = useState(false)
+  const { membra, sair } = useAuth()
+  const navegar = useNavigate()
+
+  const handleSair = () => {
+    sair()
+    navegar('/login')
+  }
 
   return (
     <nav className="bg-pink-primary shadow-lg">
@@ -37,6 +44,28 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+
+            {membra && (
+              <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/30">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm">
+                    {membra.foto ? (
+                      <img src={membra.foto} alt={membra.nome} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <span>🐱</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium">{membra.nome}</span>
+                </div>
+                <button
+                  onClick={handleSair}
+                  className="text-white/70 hover:text-white text-sm"
+                  title="Sair"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Botão hamburguer mobile */}
@@ -79,6 +108,27 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+
+            {membra && (
+              <div className="border-t border-white/20 pt-3 mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-white px-4">
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm">
+                    {membra.foto ? (
+                      <img src={membra.foto} alt={membra.nome} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <span>🐱</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium">{membra.nome}</span>
+                </div>
+                <button
+                  onClick={() => { setMenuAberto(false); handleSair() }}
+                  className="text-white/80 hover:text-white text-sm px-4 py-2"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,9 +1,14 @@
 using System.Text.Json.Serialization;
 using Amazon.DynamoDBv2;
+using Amazon.Lambda.AspNetCoreServer.Hosting;
 using Literacats.Api.Endpoints;
 using Literacats.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Roda como Lambda quando estiver na AWS (detectado pela env var do runtime).
+// Localmente continua sendo Kestrel — esse Add é no-op fora do Lambda.
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 // Configurar JSON para aceitar enums como string
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -41,19 +46,22 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Literacats API", Version = "v1" });
 });
 
-// CORS para o frontend local
+// CORS — origens locais + qualquer origem extra definida em AllowedOrigins
+// (ex: URL do Vercel). Em produção, setar via env var: AllowedOrigins__0=https://...
+var origensExtras = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+var origensPermitidas = new[] { "http://localhost:5173", "http://localhost:5174" }
+    .Concat(origensExtras)
+    .ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+        policy.WithOrigins(origensPermitidas)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
-
-// Preparado para Lambda (descomente quando for fazer deploy)
-// builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 var app = builder.Build();
 

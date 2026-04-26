@@ -101,6 +101,44 @@ public class DynamoDbService : IDataService
         return doc == null ? null : MapToMembra(doc);
     }
 
+    public async Task<Membra?> AtualizarMembraAsync(string id, string? bio, int? metaLeituraAnual)
+    {
+        var membra = await BuscarMembraAsync(id);
+        if (membra is null) return null;
+
+        // Constrói update parcial só com os campos passados pra não sobrescrever os outros
+        var updates = new List<string>();
+        var values = new Dictionary<string, AttributeValue>();
+        if (bio is not null)
+        {
+            updates.Add("Bio = :bio");
+            values[":bio"] = new AttributeValue { S = bio };
+            membra.Bio = bio;
+        }
+        if (metaLeituraAnual is not null)
+        {
+            updates.Add("MetaLeituraAnual = :meta");
+            values[":meta"] = new AttributeValue { N = metaLeituraAnual.Value.ToString() };
+            membra.MetaLeituraAnual = metaLeituraAnual.Value;
+        }
+
+        if (updates.Count == 0) return membra;
+
+        await _dynamoDb.UpdateItemAsync(new UpdateItemRequest
+        {
+            TableName = _tableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                { "PK", new AttributeValue { S = $"MEMBRA#{id}" } },
+                { "SK", new AttributeValue { S = $"MEMBRA#{id}" } }
+            },
+            UpdateExpression = "SET " + string.Join(", ", updates),
+            ExpressionAttributeValues = values
+        });
+
+        return membra;
+    }
+
     public async Task<Membra?> AutenticarMembraAsync(string membraId, string pin)
     {
         var membra = await BuscarMembraAsync(membraId);

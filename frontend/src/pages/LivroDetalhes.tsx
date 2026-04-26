@@ -4,12 +4,11 @@ import { BookCover } from '../components/BookCover/BookCover'
 import {
   buscarLivro,
   buscarAvaliacoesDoLivro,
-  listarMembras,
   salvarMembraLivro,
   type Livro,
   type AvaliacaoLivro,
-  type Membra,
 } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
 function EstrelasDisplay({ quantidade }: { quantidade: number }) {
   return (
@@ -44,15 +43,14 @@ function EstrelasInput({ valor, onChange }: { valor: number; onChange: (v: numbe
 
 export function LivroDetalhes() {
   const { id } = useParams<{ id: string }>()
+  const { membra } = useAuth()
   const [livro, setLivro] = useState<Livro | null>(null)
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoLivro[]>([])
-  const [membras, setMembras] = useState<Membra[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
   // Formulário de avaliação
   const [mostrarForm, setMostrarForm] = useState(false)
-  const [membraSelecionada, setMembraSelecionada] = useState('')
   const [estrelas, setEstrelas] = useState(0)
   const [resenha, setResenha] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -62,24 +60,22 @@ export function LivroDetalhes() {
     Promise.all([
       buscarLivro(id),
       buscarAvaliacoesDoLivro(id),
-      listarMembras(),
     ])
-      .then(([livroData, avaliacoesData, membrasData]) => {
+      .then(([livroData, avaliacoesData]) => {
         setLivro(livroData)
         setAvaliacoes(avaliacoesData)
-        setMembras(membrasData)
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
   }, [id])
 
   const handleEnviarAvaliacao = async () => {
-    if (!id || !membraSelecionada || estrelas === 0) return
+    if (!id || !membra || estrelas === 0) return
 
     setEnviando(true)
     try {
-      await salvarMembraLivro(membraSelecionada, id, {
-        membraId: membraSelecionada,
+      await salvarMembraLivro(membra.id, id, {
+        membraId: membra.id,
         livroId: id,
         status: 'Lido',
         estrelas,
@@ -95,7 +91,6 @@ export function LivroDetalhes() {
       setMostrarForm(false)
       setEstrelas(0)
       setResenha('')
-      setMembraSelecionada('')
     } catch (e) {
       console.error('Erro ao enviar avaliação:', e)
     } finally {
@@ -151,6 +146,7 @@ export function LivroDetalhes() {
           <BookCover
             titulo={livro.titulo}
             autor={livro.autor}
+            capa={livro.capa}
             className="w-full aspect-[2/3] rounded-2xl shadow-xl"
           />
         </div>
@@ -187,7 +183,7 @@ export function LivroDetalhes() {
               <div className="bg-white rounded-xl px-4 py-3 shadow">
                 <p className="text-black/50 text-xs">Cadastrado em</p>
                 <p className="text-lg font-semibold">
-                  {new Date(livro.dataCadastro).toLocaleDateString('pt-BR')}
+                  {new Date(livro.dataCadastro).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                 </p>
               </div>
             )}
@@ -208,22 +204,9 @@ export function LivroDetalhes() {
           <h2 className="font-display text-xl font-semibold mb-4">Sua avaliação</h2>
 
           <div className="space-y-4">
-            {/* Quem está avaliando */}
-            <div>
-              <label className="block text-sm font-medium text-black/70 mb-2">
-                Quem é você?
-              </label>
-              <select
-                value={membraSelecionada}
-                onChange={(e) => setMembraSelecionada(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-pink-light rounded-xl focus:border-pink-primary focus:outline-none"
-              >
-                <option value="">Escolha seu nome...</option>
-                {membras.map((m) => (
-                  <option key={m.id} value={m.id}>{m.nome} (@{m.apelido})</option>
-                ))}
-              </select>
-            </div>
+            <p className="text-sm text-black/60">
+              Avaliando como <span className="font-medium text-black">{membra?.nome}</span>
+            </p>
 
             {/* Estrelas */}
             <div>
@@ -249,7 +232,7 @@ export function LivroDetalhes() {
 
             <button
               onClick={handleEnviarAvaliacao}
-              disabled={enviando || !membraSelecionada || estrelas === 0}
+              disabled={enviando || estrelas === 0}
               className="bg-pink-primary hover:bg-pink-hot text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {enviando ? 'Enviando...' : 'Enviar avaliação'}
@@ -281,7 +264,7 @@ export function LivroDetalhes() {
                       <p className="font-medium text-black">{avaliacao.membraNome}</p>
                       {avaliacao.dataLeitura && (
                         <p className="text-xs text-black/50">
-                          {new Date(avaliacao.dataLeitura).toLocaleDateString('pt-BR')}
+                          {new Date(avaliacao.dataLeitura).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                         </p>
                       )}
                     </div>

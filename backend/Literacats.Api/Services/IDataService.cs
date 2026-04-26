@@ -13,6 +13,9 @@ public interface IDataService
     Task<List<Membra>> ListarMembrasAsync();
     Task<Membra?> BuscarMembraAsync(string id);
 
+    // Edita bio e/ou meta de leitura. Campos null não são alterados (PATCH parcial).
+    Task<Membra?> AtualizarMembraAsync(string id, string? bio, int? metaLeituraAnual);
+
     // Auth — PIN da membra (hash com BCrypt). Retorna a Membra em sucesso, null em falha.
     Task<Membra?> AutenticarMembraAsync(string membraId, string pin);
 
