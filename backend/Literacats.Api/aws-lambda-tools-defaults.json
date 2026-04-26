@@ -1,0 +1,17 @@
+{
+  "Information": [
+    "Defaults pro `dotnet lambda deploy-function`. Edite a região/nome se quiser.",
+    "Function URL é configurada via console depois do primeiro deploy (ou via --function-url-config no comando)."
+  ],
+  "profile": "default",
+  "region": "us-east-1",
+  "configuration": "Release",
+  "function-runtime": "dotnet8",
+  "function-memory-size": 512,
+  "function-timeout": 30,
+  "function-handler": "Literacats.Api",
+  "function-name": "literacats-api",
+  "function-architecture": "x86_64",
+  "framework": "net8.0",
+  "environment-variables": "UseDynamoDB=true;DynamoDB__TableName=literacats"
+}

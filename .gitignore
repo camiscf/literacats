@@ -43,3 +43,10 @@ npm-debug.log*
 tmp/
 temp/
 *.tmp
+
+# AWS CLI install artifacts (não precisam estar no repo)
+aws/
+awscliv2.zip
+
+# TypeScript build cache (regenerado a cada build)
+*.tsbuildinfo
