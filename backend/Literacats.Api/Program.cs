@@ -40,6 +40,13 @@ else
     Console.WriteLine("Using InMemory data store");
 }
 
+// Completa capa/páginas/ISBN faltantes na Open Library ao cadastrar um livro
+builder.Services.AddHttpClient<IEnriquecimentoLivroService, OpenLibraryService>(client =>
+{
+    // Timeout curto: se a Open Library demorar, o cadastro segue sem os dados extras
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

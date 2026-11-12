@@ -132,6 +132,17 @@ public class InMemoryDataService : IDataService
     public async Task<Sugestao> AdicionarSugestaoAsync(string livroTitulo, string membraId, string membraNome)
     {
         var sorteio = await ObterOuCriarSorteioAtualAsync();
+
+        // Limite de 1 sugestão por membra — igual ao encontro presencial, cada uma
+        // escreve um papel só. Se já sugeriu, deixamos ela trocar o livro antes do sorteio.
+        var existente = sorteio.Sugestoes.FirstOrDefault(s => s.MembraId == membraId);
+        if (existente != null)
+        {
+            existente.LivroTitulo = livroTitulo;
+            existente.MembraNome = membraNome;
+            return existente;
+        }
+
         var sugestao = new Sugestao
         {
             Id = Guid.NewGuid().ToString(),

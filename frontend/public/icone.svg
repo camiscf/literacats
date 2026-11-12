@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- PROVISÓRIO: trocar pelo símbolo felino oficial do manual de marca -->
+  <rect width="512" height="512" fill="#EE79A0"/>
+  <g fill="none" stroke="#1A1A19" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#ECEBE1" d="M146 296c0-74 22-118 38-138l6-42c2-10 12-13 20-7l30 26c10-3 22-3 32 0l30-26c8-6 18-3 20 7l6 42c16 20 38 64 38 138 0 58-50 92-110 92s-110-34-110-92z"/>
+    <path d="M246 134l10-14 8 15"/>
+    <path d="M118 286l42 6M120 314l40-4M394 286l-42 6M392 314l-40-4"/>
+  </g>
+</svg>

@@ -1,49 +1,114 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Membra } from '../services/api'
-
-// Subset da Membra que guardamos em localStorage. Sem bio/meta — só o necessário
-// pra identificar quem está usando. Backend não valida sessão (app coletivo).
-export interface MembraLogada {
-  id: string
-  nome: string
-  apelido: string
-  foto?: string
-}
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { Session } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
+import type { Membra } from '../types'
 
 interface AuthContextValue {
-  membra: MembraLogada | null
-  entrar: (membra: Membra) => void
-  sair: () => void
+  sessao: Session | null
+  membra: Membra | null
+  carregando: boolean
+  ehAdmin: boolean
+  enviarCodigo: (email: string) => Promise<void>
+  confirmarCodigo: (email: string, codigo: string) => Promise<void>
+  sair: () => Promise<void>
+  recarregarMembra: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-const STORAGE_KEY = 'literacats:membra'
+// Traduz os erros do Supabase Auth para algo que as meninas entendem
+function traduzirErroDeLogin(mensagem: string): string {
+  const m = mensagem.toLowerCase()
+  if (m.includes('signups not allowed') || m.includes('user not found')) {
+    return 'Esse e-mail ainda não está no clube. Fala com a organização!'
+  }
+  if (m.includes('expired') || m.includes('invalid')) {
+    return 'Código inválido ou expirado. Confere ou pede um novo.'
+  }
+  if (m.includes('rate limit') || m.includes('security purposes')) {
+    return 'Muitas tentativas seguidas. Espera um minutinho e tenta de novo.'
+  }
+  return 'Não deu certo agora. Tenta de novo em instantes.'
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [membra, setMembra] = useState<MembraLogada | null>(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    try {
-      return JSON.parse(raw) as MembraLogada
-    } catch {
-      return null
-    }
-  })
+  const [sessao, setSessao] = useState<Session | null>(null)
+  const [membra, setMembra] = useState<Membra | null>(null)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    if (membra) localStorage.setItem(STORAGE_KEY, JSON.stringify(membra))
-    else localStorage.removeItem(STORAGE_KEY)
-  }, [membra])
+    supabase.auth.getSession().then(({ data }) => {
+      setSessao(data.session)
+      if (!data.session) setCarregando(false)
+    })
+    // Sem await aqui dentro: chamar o Supabase dentro deste callback pode travar
+    // o client. A busca do perfil fica no efeito abaixo.
+    const { data } = supabase.auth.onAuthStateChange((_evento, novaSessao) => {
+      setSessao(novaSessao)
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
 
-  const entrar = (m: Membra) => {
-    setMembra({ id: m.id, nome: m.nome, apelido: m.apelido, foto: m.foto })
+  const idUsuaria = sessao?.user.id
+
+  const buscarPerfil = useCallback(async () => {
+    if (!idUsuaria) {
+      setMembra(null)
+      return
+    }
+    const { data } = await supabase.from('membras').select('*').eq('id', idUsuaria).single()
+    setMembra((data as Membra | null) ?? null)
+  }, [idUsuaria])
+
+  useEffect(() => {
+    if (!idUsuaria) {
+      setMembra(null)
+      return
+    }
+    setCarregando(true)
+    buscarPerfil().finally(() => setCarregando(false))
+  }, [idUsuaria, buscarPerfil])
+
+  const enviarCodigo = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: {
+        // só entra quem a organização cadastrou
+        shouldCreateUser: false,
+        // se ela tocar no link do e-mail, volta para onde o app está aberto
+        emailRedirectTo: window.location.origin,
+      },
+    })
+    if (error) throw new Error(traduzirErroDeLogin(error.message))
   }
 
-  const sair = () => setMembra(null)
+  const confirmarCodigo = async (email: string, codigo: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: codigo.trim(),
+      type: 'email',
+    })
+    if (error) throw new Error(traduzirErroDeLogin(error.message))
+  }
+
+  const sair = async () => {
+    await supabase.auth.signOut()
+    setMembra(null)
+  }
 
   return (
-    <AuthContext.Provider value={{ membra, entrar, sair }}>
+    <AuthContext.Provider
+      value={{
+        sessao,
+        membra,
+        carregando,
+        ehAdmin: membra?.papel === 'admin' && membra.ativa,
+        enviarCodigo,
+        confirmarCodigo,
+        sair,
+        recarregarMembra: buscarPerfil,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

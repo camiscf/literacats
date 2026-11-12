@@ -301,9 +301,15 @@ public class DynamoDbService : IDataService
         // Garantir que sorteio existe
         await ObterOuCriarSorteioAtualAsync();
 
+        // Limite de 1 sugestão por membra — igual ao encontro presencial, cada uma
+        // escreve um papel só. Se já sugeriu, reusamos o mesmo Id pra que o PutItem
+        // sobrescreva a sugestão antiga em vez de criar um papel a mais no pote.
+        var existentes = await BuscarSugestoesSorteioAsync(sorteioKey);
+        var jaSugeriu = existentes.FirstOrDefault(s => s.MembraId == membraId);
+
         var sugestao = new Sugestao
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = jaSugeriu?.Id ?? Guid.NewGuid().ToString(),
             LivroTitulo = livroTitulo,
             MembraId = membraId,
             MembraNome = membraNome

@@ -1,282 +1,160 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { formatarMesDaLeitura } from '../lib/datas'
+import type { Leitura, LivroComMedia } from '../types'
 import { BookCover } from '../components/BookCover/BookCover'
-import {
-  buscarLivro,
-  buscarAvaliacoesDoLivro,
-  salvarMembraLivro,
-  type Livro,
-  type AvaliacaoLivro,
-} from '../services/api'
-import { useAuth } from '../contexts/AuthContext'
+import { Patinhas, formatarPatinhas } from '../components/ui/Patinhas'
+import { Badge } from '../components/ui/Badge'
+import { Icone } from '../components/ui/Icone'
+import { Carregando, EstadoVazio, Erro } from '../components/ui/Estados'
 
-function EstrelasDisplay({ quantidade }: { quantidade: number }) {
+type Comentario = Leitura & { membras: { nome: string } | null }
+
+// Antes do encontro, comentário marcado como spoiler só abre com toque intencional
+function TextoComSpoiler({ texto, oculto }: { texto: string; oculto: boolean }) {
+  const [revelado, setRevelado] = useState(false)
+  if (!oculto || revelado) return <p className="text-[15px] leading-relaxed">{texto}</p>
   return (
-    <span className="text-yellow-500">
-      {'★'.repeat(quantidade)}{'☆'.repeat(5 - quantidade)}
-    </span>
-  )
-}
-
-function EstrelasInput({ valor, onChange }: { valor: number; onChange: (v: number) => void }) {
-  const [hover, setHover] = useState(0)
-
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((estrela) => (
-        <button
-          key={estrela}
-          type="button"
-          onClick={() => onChange(estrela)}
-          onMouseEnter={() => setHover(estrela)}
-          onMouseLeave={() => setHover(0)}
-          className="text-3xl transition-transform hover:scale-110"
-        >
-          <span className={estrela <= (hover || valor) ? 'text-yellow-500' : 'text-gray-300'}>
-            ★
-          </span>
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      onClick={() => setRevelado(true)}
+      className="rounded-2xl bg-pantufa/50 px-4 py-3 text-left text-sm"
+    >
+      <span className="font-semibold">Comentário com spoiler.</span> Tocar pra ver mesmo assim
+    </button>
   )
 }
 
 export function LivroDetalhes() {
   const { id } = useParams<{ id: string }>()
-  const { membra } = useAuth()
-  const [livro, setLivro] = useState<Livro | null>(null)
-  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoLivro[]>([])
+  const [livro, setLivro] = useState<LivroComMedia | null>(null)
+  const [comentarios, setComentarios] = useState<Comentario[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState<string | null>(null)
+  const [erro, setErro] = useState(false)
 
-  // Formulário de avaliação
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [estrelas, setEstrelas] = useState(0)
-  const [resenha, setResenha] = useState('')
-  const [enviando, setEnviando] = useState(false)
-
-  useEffect(() => {
+  const buscarPaginaDoLivro = useCallback(async () => {
     if (!id) return
-    Promise.all([
-      buscarLivro(id),
-      buscarAvaliacoesDoLivro(id),
+    setCarregando(true)
+    setErro(false)
+    const [resLivro, resLeituras] = await Promise.all([
+      supabase.from('livros_com_media').select('*').eq('id', id).maybeSingle(),
+      supabase
+        .from('leituras')
+        .select('*, membras(nome)')
+        .eq('livro_id', id)
+        .not('patinhas', 'is', null)
+        .order('atualizado_em', { ascending: false }),
     ])
-      .then(([livroData, avaliacoesData]) => {
-        setLivro(livroData)
-        setAvaliacoes(avaliacoesData)
-      })
-      .catch((e) => setErro(e.message))
-      .finally(() => setCarregando(false))
+    if (resLivro.error || resLeituras.error) setErro(true)
+    setLivro((resLivro.data as LivroComMedia | null) ?? null)
+    setComentarios((resLeituras.data ?? []) as Comentario[])
+    setCarregando(false)
   }, [id])
 
-  const handleEnviarAvaliacao = async () => {
-    if (!id || !membra || estrelas === 0) return
+  useEffect(() => {
+    buscarPaginaDoLivro()
+  }, [buscarPaginaDoLivro])
 
-    setEnviando(true)
-    try {
-      await salvarMembraLivro(membra.id, id, {
-        membraId: membra.id,
-        livroId: id,
-        status: 'Lido',
-        estrelas,
-        resenha: resenha.trim() || undefined,
-        dataLeitura: new Date().toISOString(),
-      })
+  if (carregando) return <Carregando />
+  if (erro) return <Erro texto="Não deu pra abrir esse livro." aoTentarDeNovo={buscarPaginaDoLivro} />
+  if (!livro) return <EstadoVazio titulo="Livro não encontrado" acao={<Link to="/biblioteca" className="font-semibold underline">Voltar pra biblioteca</Link>} />
 
-      // Recarregar avaliações
-      const novasAvaliacoes = await buscarAvaliacoesDoLivro(id)
-      setAvaliacoes(novasAvaliacoes)
-
-      // Limpar formulário
-      setMostrarForm(false)
-      setEstrelas(0)
-      setResenha('')
-    } catch (e) {
-      console.error('Erro ao enviar avaliação:', e)
-    } finally {
-      setEnviando(false)
-    }
-  }
-
-  if (carregando) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="animate-spin text-4xl">📚</div>
-      </div>
-    )
-  }
-
-  if (erro) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-2xl mb-4">😿</p>
-        <p className="text-red-500">{erro}</p>
-        <Link to="/" className="text-pink-hot hover:underline mt-4 inline-block">
-          Voltar para a biblioteca
-        </Link>
-      </div>
-    )
-  }
-
-  if (!livro) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-2xl mb-4">📚</p>
-        <p className="text-black/60">Livro não encontrado</p>
-        <Link to="/" className="text-pink-hot hover:underline mt-4 inline-block">
-          Voltar para a biblioteca
-        </Link>
-      </div>
-    )
-  }
-
-  const mediaEstrelas = avaliacoes.length > 0
-    ? (avaliacoes.reduce((acc, a) => acc + (a.estrelas || 0), 0) / avaliacoes.length).toFixed(1)
-    : null
+  const distribuicao = [
+    { nota: 5, total: livro.notas_5 },
+    { nota: 4, total: livro.notas_4 },
+    { nota: 3, total: livro.notas_3 },
+    { nota: 2, total: livro.notas_2 },
+    { nota: 1, total: livro.notas_1 },
+  ]
+  const maiorFaixa = Math.max(1, ...distribuicao.map((d) => d.total))
+  // A página de um livro já lido libera spoilers: a leitura do clube acabou
+  const encontroJaPassou = livro.lido_no_encontro_em !== null && new Date(livro.lido_no_encontro_em) <= new Date()
 
   return (
-    <div>
-      <Link to="/" className="inline-flex items-center text-pink-hot hover:text-pink-primary mb-6 transition-colors">
-        <span className="mr-2">←</span> Voltar para a biblioteca
+    <div className="flex flex-col gap-6">
+      <Link to="/biblioteca" className="inline-flex min-h-11 items-center gap-1 self-start text-sm font-semibold">
+        <Icone nome="voltar" tamanho={18} /> Biblioteca
       </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Coluna da capa */}
-        <div className="md:col-span-1">
-          <BookCover
-            titulo={livro.titulo}
-            autor={livro.autor}
-            capa={livro.capa}
-            className="w-full aspect-[2/3] rounded-2xl shadow-xl"
-          />
-        </div>
-
-        {/* Coluna de informações */}
-        <div className="md:col-span-2">
-          <span className="inline-block bg-pink-light text-pink-hot px-3 py-1 rounded-full text-sm font-medium mb-3">
-            {livro.genero}
-          </span>
-
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-black mb-2">
-            {livro.titulo}
-          </h1>
-
-          <p className="text-xl text-black/70 mb-4">{livro.autor}</p>
-
-          {mediaEstrelas && (
-            <div className="flex items-center gap-3 mb-6">
-              <EstrelasDisplay quantidade={Math.round(Number(mediaEstrelas))} />
-              <span className="text-black/60">
-                {mediaEstrelas}/5 ({avaliacoes.length} {avaliacoes.length === 1 ? 'avaliação' : 'avaliações'} do clube)
-              </span>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-4 mb-8">
-            {livro.paginas && (
-              <div className="bg-white rounded-xl px-4 py-3 shadow">
-                <p className="text-black/50 text-xs">Páginas</p>
-                <p className="text-lg font-semibold">{livro.paginas}</p>
-              </div>
-            )}
-            {livro.dataCadastro && (
-              <div className="bg-white rounded-xl px-4 py-3 shadow">
-                <p className="text-black/50 text-xs">Cadastrado em</p>
-                <p className="text-lg font-semibold">
-                  {new Date(livro.dataCadastro).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-pink-primary hover:bg-pink-hot text-white px-6 py-3 rounded-xl font-medium transition-colors"
-          >
-            {mostrarForm ? '✕ Cancelar' : '⭐ Avaliar este livro'}
-          </button>
-        </div>
-      </div>
-
-      {/* Formulário de avaliação */}
-      {mostrarForm && (
-        <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg shadow-pink-primary/10">
-          <h2 className="font-display text-xl font-semibold mb-4">Sua avaliação</h2>
-
-          <div className="space-y-4">
-            <p className="text-sm text-black/60">
-              Avaliando como <span className="font-medium text-black">{membra?.nome}</span>
-            </p>
-
-            {/* Estrelas */}
-            <div>
-              <label className="block text-sm font-medium text-black/70 mb-2">
-                Nota
-              </label>
-              <EstrelasInput valor={estrelas} onChange={setEstrelas} />
-            </div>
-
-            {/* Resenha */}
-            <div>
-              <label className="block text-sm font-medium text-black/70 mb-2">
-                Resenha <span className="text-black/40">(opcional)</span>
-              </label>
-              <textarea
-                value={resenha}
-                onChange={(e) => setResenha(e.target.value)}
-                placeholder="O que você achou do livro?"
-                rows={4}
-                className="w-full px-4 py-3 border-2 border-pink-light rounded-xl focus:border-pink-primary focus:outline-none resize-none"
-              />
-            </div>
-
-            <button
-              onClick={handleEnviarAvaliacao}
-              disabled={enviando || estrelas === 0}
-              className="bg-pink-primary hover:bg-pink-hot text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {enviando ? 'Enviando...' : 'Enviar avaliação'}
-            </button>
-          </div>
+      {encontroJaPassou && (
+        <div className="self-start">
+          <Badge tom="scar">Spoiler liberado!</Badge>
         </div>
       )}
 
-      {/* Resenhas das membras */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-display font-bold text-black mb-6">
-          O que as gatas acharam 🐱
-        </h2>
+      <header className="flex gap-4">
+        <BookCover titulo={livro.titulo} autora={livro.autora} capa={livro.capa_url} className="h-40 w-28 shrink-0 rounded-xl border-2 border-preto" />
+        <div className="flex flex-col justify-center gap-1">
+          <h1 className="text-3xl leading-none">{livro.titulo}</h1>
+          <p className="text-preto-suave">{livro.autora}</p>
+          {livro.lido_no_encontro_em && (
+            <p className="text-sm text-preto-suave">Leitura de {formatarMesDaLeitura(livro.lido_no_encontro_em)}</p>
+          )}
+          {livro.genero && (
+            <div className="mt-1">
+              <Badge>{livro.genero}</Badge>
+            </div>
+          )}
+        </div>
+      </header>
 
-        {avaliacoes.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow">
-            <p className="text-black/60">Nenhuma avaliação ainda. Seja a primeira!</p>
-          </div>
+      <section aria-label="Notas do clube" className="flex gap-5 rounded-3xl border-2 border-preto bg-white p-4">
+        <div className="flex flex-col items-center justify-center gap-1">
+          <span className="font-display text-5xl leading-none">
+            {livro.media_patinhas !== null ? formatarPatinhas(livro.media_patinhas) : '—'}
+          </span>
+          {livro.media_patinhas !== null && <Patinhas valor={livro.media_patinhas} tamanho={14} />}
+          <span className="text-xs text-preto-suave">
+            {livro.total_avaliacoes} {livro.total_avaliacoes === 1 ? 'avaliação' : 'avaliações'}
+          </span>
+        </div>
+        <ul className="flex flex-1 flex-col justify-center gap-1">
+          {distribuicao.map((faixa) => (
+            <li key={faixa.nota} className="flex items-center gap-2 text-xs">
+              <span className="w-2 font-semibold">{faixa.nota}</span>
+              <span className="h-2.5 flex-1 rounded-full bg-novelo">
+                <span
+                  className="block h-2.5 rounded-full bg-scar"
+                  style={{ width: `${(faixa.total / maiorFaixa) * 100}%` }}
+                />
+              </span>
+              <span className="sr-only">
+                {faixa.total} {faixa.total === 1 ? 'avaliação' : 'avaliações'} com {faixa.nota} patinhas
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl leading-none">Comentários</h2>
+        {comentarios.length === 0 ? (
+          <EstadoVazio titulo="Ninguém comentou ainda" texto="As avaliações das gatinhas aparecem aqui." />
         ) : (
-          <div className="space-y-4">
-            {avaliacoes.map((avaliacao, index) => (
-              <article key={index} className="bg-white rounded-2xl p-6 shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-pink-light rounded-full flex items-center justify-center">
-                      <span>🐱</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-black">{avaliacao.membraNome}</p>
-                      {avaliacao.dataLeitura && (
-                        <p className="text-xs text-black/50">
-                          {new Date(avaliacao.dataLeitura).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {avaliacao.estrelas > 0 && <EstrelasDisplay quantidade={avaliacao.estrelas} />}
+          <ul className="flex flex-col gap-3">
+            {comentarios.map((c) => (
+              <li key={c.membra_id} className="flex flex-col gap-2 rounded-3xl border-2 border-preto bg-white p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{c.membras?.nome ?? 'Gatinha'}</span>
+                  {c.patinhas !== null && <Patinhas valor={c.patinhas} tamanho={14} />}
                 </div>
-                {avaliacao.resenha && (
-                  <p className="text-black/80 leading-relaxed">{avaliacao.resenha}</p>
+                {c.comentario && <TextoComSpoiler texto={c.comentario} oculto={c.tem_spoiler && !encontroJaPassou} />}
+                {c.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {c.tags.map((tag) => (
+                      <Badge key={tag} tom="novelo">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
-              </article>
+                {c.personagem_favorita && (
+                  <p className="text-sm text-preto-suave">Personagem favorita: {c.personagem_favorita}</p>
+                )}
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </section>
     </div>

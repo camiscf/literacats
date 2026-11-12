@@ -50,3 +50,6 @@ awscliv2.zip
 
 # TypeScript build cache (regenerado a cada build)
 *.tsbuildinfo
+
+materiais/
+supabase/

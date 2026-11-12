@@ -25,8 +25,11 @@ public static class LivrosEndpoints
         .WithName("BuscarLivro")
         .WithSummary("Busca um livro pelo ID");
 
-        group.MapPost("/", async (Livro livro, IDataService data) =>
+        group.MapPost("/", async (Livro livro, IDataService data, IEnriquecimentoLivroService enriquecimento) =>
         {
+            // Completa capa/páginas/ISBN faltantes antes de salvar — assim o dado já
+            // entra no banco corrigido, em vez de o frontend ter que buscar a cada render.
+            await enriquecimento.CompletarDadosAsync(livro);
             var novoLivro = await data.AdicionarLivroAsync(livro);
             return Results.Created($"/livros/{novoLivro.Id}", novoLivro);
         })
